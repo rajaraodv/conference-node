@@ -47,7 +47,7 @@ org.authenticate({
     return console.error('unable to authenticate to sfdc');
   }
 
-  var query = 'SELECT Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
+  var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
 
   org.query({
     query: query
@@ -125,6 +125,7 @@ function appendSessionsWithOutSpeakers() {
 
 function normalizeSessionObj(obj) {
   return  {
+    "Title__c": obj["Title__c"] || obj["title__c"],
     "Track__c": obj["Track__c"] || obj["track__c"],
     "Id": obj["Id"] || obj["id"],
     "Name": obj["Name"] || obj["name"],
