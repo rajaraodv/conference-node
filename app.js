@@ -47,7 +47,7 @@ org.authenticate({
     return console.error('unable to authenticate to sfdc');
   }
 
-  var query = 'SELECT Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Speaker__r.name, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
+  var query = 'SELECT Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
 
   org.query({
     query: query
@@ -142,7 +142,8 @@ function normalizeSpeakerObj(obj) {
     "Id": obj["Id"] || obj["id"],
     "Speaker_Bio__c": obj["Speaker_Bio__c"] || obj["speaker_bio__c"],
     "Photo_Url__c": obj["Photo_Url__c"] || obj["photo_url__c"],
-    "Twitter__c": obj["Twitter__c"] || obj["twitter__c"]
+    "Twitter__c": obj["Twitter__c"] || obj["twitter__c"],
+    "Title__c": obj["Title__c"] || obj["title__c"]
   }
 }
 
