@@ -42,12 +42,16 @@ var org = nforce.createConnection({
 org.authenticate({
   username: sfuser,
   password: sfpass
-}, function(err, res) {
+}, function(err, oauth) {
   if (err) {
     return console.error('unable to authenticate to sfdc');
   }
 
-  var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
+  //first subscribe to push topics to listen to changes
+  subscribeToPushTopics(oauth, 'SessionsTopic');//session changes
+  subscribeToPushTopics(oauth, 'SpeakersTopic3');//speaker changes
+
+  var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Session__r.Background_Image_Url__c, Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
 
   org.query({
     query: query
@@ -62,6 +66,28 @@ org.authenticate({
   });
 
 });
+
+function subscribeToPushTopics (oauth, topicName) {
+ // subscribe to a pushtopic
+ console.dir(oauth);
+ console.log(1);
+  var sessionsPT = org.stream({ topic: topicName, oauth: oauth });
+
+  sessionsPT.on('connect', function(){
+     console.log(2);
+    console.log('connected to '+ topicName +' pushtopic');
+  });
+
+  sessionsPT.on('error', function(error) {
+     console.log(3);
+    console.log('error: ' + error);
+  });
+
+  sessionsPT.on('data', function(data) {
+     console.log(4);
+    console.log(data);
+  });
+}
 
 function groupBySessions() {
   var sessionsObj = {};
@@ -87,7 +113,7 @@ function groupBySessions() {
 
   //set to resultJSON
   resultJSON = sessionsObj;
-  console.dir(resultJSON);
+  console.log("Got Sessions JSON data");
 
   //append non speaking sessions like lunch breaks
   appendSessionsWithOutSpeakers();
@@ -96,7 +122,7 @@ function groupBySessions() {
 // There may be sessions w/o speakers like lunch break (not technically sessions)
 //Add those non speaker sessions to the same list so we can show it in the table
 function appendSessionsWithOutSpeakers() {
-  var query = 'SELECT Track__c, Id, Name, Description__c, End_Date_And_Time__c, Start_Date_And_Time__c, session_duration__c, location__c  FROM Session__c';
+  var query = 'SELECT Title__c, Track__c, Id, Name, Description__c, End_Date_And_Time__c, Start_Date_And_Time__c, session_duration__c, location__c, Background_Image_Url__c  FROM Session__c';
 
   org.query({
     query: query
@@ -132,8 +158,9 @@ function normalizeSessionObj(obj) {
     "Description__c": obj["Description__c"] || obj["description__c"],
     "End_Date_And_Time__c": obj["End_Date_And_Time__c"] || obj["end_date_and_time__c"],
     "Start_Date_And_Time__c": obj["Start_Date_And_Time__c"] || obj["start_date_and_time__c"],
-    "Session_Duration__C": obj["session_duration__c"],
-    "Location__c": obj["location__c"]
+    "Session_Duration__C": obj["Session_Duration__c"] || obj["session_duration__c"],
+    "Location__c": obj["Location__c"] || obj["location__c"],
+    "Background_Image_Url__c": obj["Background_Image_Url__c"] || obj["background_image_url__c"]
   }
 }
 
