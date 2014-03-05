@@ -47,9 +47,8 @@ var opts = {
 };
 
 client.channels.message(opts, function(err, value) {
-    console.dir(value);
-
- });
+  console.dir(value);
+});
 
 
 
@@ -73,6 +72,22 @@ app.get('/', function(req, res) {
   return res.json(resultJSON);
 });
 
+app.post('/feedback', function(req, res) {
+  var body = req.body;
+  console.dir(body);
+  var feedback = nforce.createSObject('Feedback__c');
+
+  feedback.set('Session__c', body.Session__c);
+  feedback.set('Rating__c', body.Rating__c);
+  feedback.set('Text__c', body.Text__c);
+  feedback.set('Anonymous_App_Id__c', body.Anonymous_App_Id__c);
+  org.insert({
+    sobject: feedback,
+    oauth: oauth
+  }, function(err, resp) {
+    res.json(err || resp);
+  });
+});
 
 
 var org = nforce.createConnection({
@@ -84,6 +99,8 @@ var org = nforce.createConnection({
   mode: 'single'
 });
 
+var oauth; // store after connection
+
 function downloadDataFromSalesforce() {
   org.authenticate({
     username: SFUSER,
@@ -92,7 +109,7 @@ function downloadDataFromSalesforce() {
     if (err) {
       return console.error('unable to authenticate to sfdc');
     }
-      console.log('Connected to Salesforce');
+    console.log('Connected to Salesforce');
 
 
     //subscribe to push topics
