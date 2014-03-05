@@ -7,8 +7,51 @@ var express = require('express'),
   path = require('path');
 
 var nforce = require('nforce');
-var sfuser = process.env.SFUSER;
-var sfpass = process.env.SFPASS;
+var SFUSER = process.env.SFUSER;
+var SFPASS = process.env.SFPASS;
+var GI_CLIENT_ID = process.env.GI_CLIENT_ID;
+var GI_CLIENT_SECRET = process.env.GI_CLIENT_SECRET;
+var SF_CLIENT_ID = process.env.SF_CLIENT_ID;
+var SF_CLIENT_SECRET = process.env.SF_CLIENT_SECRET;
+
+if (!SFUSER || !SFPASS || !GI_CLIENT_ID || !GI_CLIENT_SECRET || !SF_CLIENT_ID || !SF_CLIENT_SECRET) {
+  console.log("\n******Environment variable missing***");
+  console.log("SFUSER = " + SFUSER +
+    "\nSFPASS = " + SFPASS +
+    "\nGI_CLIENT_ID = " + GI_CLIENT_ID +
+    "\nGI_CLIENT_SECRET = " + GI_CLIENT_SECRET +
+    "\nSF_CLIENT_ID = " + SF_CLIENT_ID +
+    "\nSF_CLIENT_SECRET = " + SF_CLIENT_SECRET + "\n ");
+
+  return;
+}
+var GoInstant = require('goinstant-rest').v1;
+
+var client = new GoInstant({
+  client_id: GI_CLIENT_ID,
+  client_secret: GI_CLIENT_SECRET
+});
+
+// client.apps.rooms.all({
+//   app_id: 2608
+// }, function(err, rooms, res) { 
+
+//   console.dir(rooms);
+// });
+
+var opts = {
+  app_id: 2608,
+  room_id: 73223,
+  channel: 'conferenceChannel',
+  value: 'myval'
+};
+
+client.channels.message(opts, function(err, value) {
+    console.dir(value);
+
+ });
+
+
 
 var app = express();
 
@@ -33,58 +76,69 @@ app.get('/', function(req, res) {
 
 
 var org = nforce.createConnection({
-  clientId: '3MVG9A2kN3Bn17huxQ_nFw2X9Umavifq5f6sjQt_XT4g2rFwM_4AbkWwyIXEnH.hSsSd9.I._5Nam3LVtvCkJ',
-  clientSecret: '1967801170401497065',
+  //clientId: '3MVG9A2kN3Bn17huxQ_nFw2X9Umavifq5f6sjQt_XT4g2rFwM_4AbkWwyIXEnH.hSsSd9.I._5Nam3LVtvCkJ',
+  //clientSecret: '1967801170401497065',
+  clientId: SF_CLIENT_ID,
+  clientSecret: SF_CLIENT_SECRET,
   redirectUri: 'http://localhost:3000/oauth/_callback',
   mode: 'single'
 });
 
-org.authenticate({
-  username: sfuser,
-  password: sfpass
-}, function(err, oauth) {
-  if (err) {
-    return console.error('unable to authenticate to sfdc');
-  }
-
-  //first subscribe to push topics to listen to changes
-  subscribeToPushTopics(oauth, 'SessionsTopic');//session changes
-  subscribeToPushTopics(oauth, 'SpeakersTopic3');//speaker changes
-
-  var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Session__r.Background_Image_Url__c, Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
-
-  org.query({
-    query: query
-  }, function(err, res) {
+function downloadDataFromSalesforce() {
+  org.authenticate({
+    username: SFUSER,
+    password: SFPASS
+  }, function(err, oauth) {
     if (err) {
-      resultJSON = err;
-      return console.error(err);
+      return console.error('unable to authenticate to sfdc');
     }
+      console.log('Connected to Salesforce');
 
-    resultJSON = res;
-    groupBySessions();
+
+    //subscribe to push topics
+    subscribeToAllPushTopics(oauth);
+
+    var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Session__r.Background_Image_Url__c, Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
+    org.query({
+      query: query
+    }, function(err, res) {
+      if (err) {
+        resultJSON = err;
+        return console.error(err);
+      }
+
+      resultJSON = res;
+      groupBySessions();
+    });
+
+  });
+};
+
+
+// Subscribe to 2 push topics to listen to changes
+//Note we can't create pushTopics on relationships, that why we are creating push topics for each object
+function subscribeToAllPushTopics(oauth) {
+  subscribeToPushTopics(oauth, 'SessionsTopic'); //session changes
+  subscribeToPushTopics(oauth, 'SpeakersTopic3'); //speaker changes
+  console.log('Subscribed to Push Topics');
+}
+
+function subscribeToPushTopics(oauth, topicName) {
+  // subscribe to a pushtopic
+  var sessionsPT = org.stream({
+    topic: topicName,
+    oauth: oauth
   });
 
-});
-
-function subscribeToPushTopics (oauth, topicName) {
- // subscribe to a pushtopic
- console.dir(oauth);
- console.log(1);
-  var sessionsPT = org.stream({ topic: topicName, oauth: oauth });
-
-  sessionsPT.on('connect', function(){
-     console.log(2);
-    console.log('connected to '+ topicName +' pushtopic');
+  sessionsPT.on('connect', function() {
+    console.log('connected to ' + topicName + ' pushtopic');
   });
 
   sessionsPT.on('error', function(error) {
-     console.log(3);
     console.log('error: ' + error);
   });
 
   sessionsPT.on('data', function(data) {
-     console.log(4);
     console.log(data);
   });
 }
@@ -96,7 +150,7 @@ function groupBySessions() {
     var record = records[i].toJSON();
     record.session__r = normalizeSessionObj(record.session__r);
     //console.dir(record.session__r);
-    var sessionId = record.session__r.Id; 
+    var sessionId = record.session__r.Id;
     var session = sessionsObj[sessionId];
     if (session == "undefined" || session == undefined) {
       session = record.session__r;
@@ -113,7 +167,7 @@ function groupBySessions() {
 
   //set to resultJSON
   resultJSON = sessionsObj;
-  console.log("Got Sessions JSON data");
+  console.log("Got Sessions JSON data from Salesforce");
 
   //append non speaking sessions like lunch breaks
   appendSessionsWithOutSpeakers();
@@ -150,7 +204,7 @@ function appendSessionsWithOutSpeakers() {
 }
 
 function normalizeSessionObj(obj) {
-  return  {
+  return {
     "Title__c": obj["Title__c"] || obj["title__c"],
     "Track__c": obj["Track__c"] || obj["track__c"],
     "Id": obj["Id"] || obj["id"],
@@ -165,7 +219,7 @@ function normalizeSessionObj(obj) {
 }
 
 function normalizeSpeakerObj(obj) {
-  return  {
+  return {
     "Name": obj["Name"] || obj["name"],
     "Id": obj["Id"] || obj["id"],
     "Speaker_Bio__c": obj["Speaker_Bio__c"] || obj["speaker_bio__c"],
@@ -178,4 +232,6 @@ function normalizeSpeakerObj(obj) {
 
 http.createServer(app).listen(app.get('port'), function() {
   console.log("Express server listening on port " + app.get('port'));
+  //download at the beginning
+  downloadDataFromSalesforce();
 });
