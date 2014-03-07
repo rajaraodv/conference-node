@@ -85,7 +85,13 @@ app.post('/feedback', function(req, res) {
     sobject: feedback,
     oauth: oauth
   }, function(err, resp) {
-    res.json(err || resp);
+    var result = err || resp;
+    var statusCode = result.statusCode;
+    if(!statusCode || statusCode == undefined) {
+      statusCode = 200;
+    }
+    console.log("*** statusCode " +  statusCode);
+    res.json(statusCode, result);
   });
 });
 
