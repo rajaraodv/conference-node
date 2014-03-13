@@ -84,6 +84,8 @@ app.post('/feedback', function(req, res) {
   feedback.set('Rating__c', body.Rating__c);
   feedback.set('Text__c', body.Text__c);
   feedback.set('Anonymous_App_Id__c', body.Anonymous_App_Id__c);
+
+  console.dir(feedback);
   org.insert({
     sobject: feedback,
     oauth: oauth
@@ -139,7 +141,7 @@ function downloadDataFromSalesforce() {
 };
 
 function loadSessionsData() {
-  var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Session__r.Background_Image_Url__c, Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
+  var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Session__r.Background_Image_Url__c, Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c,Speaker__r.Company__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
   org.query({
     query: query
   }, function(err, res) {
@@ -218,13 +220,13 @@ function createSponsorsList(sponsorsJsonObj) {
   }
 
   //sort
-  normalizedRecords = normalizedRecords.sort(function(a, b) {
-    return a["Sponsorship_Level_Internal_Sort_Number"] - b["Sponsorship_Level_Internal_Sort_Number"];
-  });
+  // normalizedRecords = normalizedRecords.sort(function(a, b) {
+  //   return a["Sponsorship_Level_Internal_Sort_Number"] - b["Sponsorship_Level_Internal_Sort_Number"];
+  // });
 
   for (var i = 0; i < normalizedRecords.length; i++) {
     var record = normalizedRecords[i];
-    var sponsorLevel = record["Sponsorship_Level_Name"];
+    var sponsorLevel = record["Sponsorship_Level_Internal_Sort_Number"];
     var sponsorsArray = sponsorsGroupedByLevel[sponsorLevel];
     if (sponsorsArray == "undefined" || sponsorsArray == undefined) {
       sponsorsGroupedByLevel[sponsorLevel] = [];
@@ -250,6 +252,7 @@ function groupBySessions() {
       session = record.session__r;
       //create a new speakers array and push the first spearker
       session.speakers = [];
+      console.dir(record.speaker__r);
       session.speakers.push(normalizeSpeakerObj(record.speaker__r));
 
       //just add session__r that now also has speakers array
@@ -320,7 +323,8 @@ function normalizeSpeakerObj(obj) {
     "Speaker_Bio__c": obj["Speaker_Bio__c"] || obj["speaker_bio__c"],
     "Photo_Url__c": obj["Photo_Url__c"] || obj["photo_url__c"],
     "Twitter__c": obj["Twitter__c"] || obj["twitter__c"],
-    "Title__c": obj["Title__c"] || obj["title__c"]
+    "Title__c": obj["Title__c"] || obj["title__c"],
+    "Company__c": obj["Company__c"] || obj["company__c"]
   }
 }
 
