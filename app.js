@@ -128,6 +128,7 @@ function downloadDataFromSalesforce() {
     //subscribe to push topics
     //Load it only *once*!
     if (!subscribeToPushTopicsOnlyOnce) {
+      console.log("*********** SUBSCRIBED *****************");
       subscribeToAllPushTopics(oauth);
       subscribeToPushTopicsOnlyOnce = true;
     }
@@ -204,7 +205,7 @@ function subscribeToPushTopics(oauth, topicName) {
 
     //publish pushTopic from Force.com to GoInstant
     goInstantClient.channels.message(opts, function(err, value) {
-      console.dir(value);
+     // console.dir(value);
     });
   });
 }
@@ -252,7 +253,6 @@ function groupBySessions() {
       session = record.session__r;
       //create a new speakers array and push the first spearker
       session.speakers = [];
-      console.dir(record.speaker__r);
       session.speakers.push(normalizeSpeakerObj(record.speaker__r));
 
       //just add session__r that now also has speakers array
