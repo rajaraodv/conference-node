@@ -142,7 +142,7 @@ function downloadDataFromSalesforce() {
 };
 
 function loadSessionsData() {
-  var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.session_duration__c, Session__r.location__c , Session__r.Background_Image_Url__c, Speaker__r.name, Speaker__r.title__c, Speaker__r.Speaker_Bio__c, Speaker__r.photo_url__c, Speaker__r.Twitter__c,Speaker__r.Company__c, Speaker__r.Id, Name, Id FROM SessionSpeakerAssociation__c';
+  var query = 'SELECT Session__r.Title__c, Session__r.Track__c, Session__r.Id, Session__r.Name, Session__r.Description__c, Session__r.End_Date_And_Time__c,Session__r.Start_Date_And_Time__c, Session__r.location__c , Speaker__r.name,  Speaker__r.Title, Speaker__r.Description, Speaker__r.photo_url__c, Speaker__r.Twitter__c, Speaker__r.Id, Name, Id FROM Conference_Speaker__c';
   org.query({
     query: query
   }, function(err, res) {
@@ -220,11 +220,7 @@ function createSponsorsList(sponsorsJsonObj) {
     normalizedRecords.push(normalizeSponsorObj(record));
   }
 
-  //sort
-  // normalizedRecords = normalizedRecords.sort(function(a, b) {
-  //   return a["Sponsorship_Level_Internal_Sort_Number"] - b["Sponsorship_Level_Internal_Sort_Number"];
-  // });
-
+  
   for (var i = 0; i < normalizedRecords.length; i++) {
     var record = normalizedRecords[i];
     var sponsorLevel = record["Sponsorship_Level_Internal_Sort_Number"];
@@ -320,10 +316,10 @@ function normalizeSpeakerObj(obj) {
   return {
     "Name": obj["Name"] || obj["name"],
     "Id": obj["Id"] || obj["id"],
-    "Speaker_Bio__c": obj["Speaker_Bio__c"] || obj["speaker_bio__c"],
-    "Photo_Url__c": obj["Photo_Url__c"] || obj["photo_url__c"],
+    "Description": obj["Description"] || obj["cescription"],
+    "Photo_URL__c": obj["Photo_URL__c"] || obj["photo_url__c"],
     "Twitter__c": obj["Twitter__c"] || obj["twitter__c"],
-    "Title__c": obj["Title__c"] || obj["title__c"],
+    "Title": obj["Title"] || obj["title"],
     "Company__c": obj["Company__c"] || obj["company__c"]
   }
 }
